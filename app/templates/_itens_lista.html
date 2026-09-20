@@ -1,0 +1,13 @@
+{% import "_icons.html" as icons %}
+<div id="itens-lista" class="itens-lista">
+  {% for item in itens %}
+  <form class="item-row" hx-post="/itens/{{ item.id }}/atualizar" hx-trigger="change" hx-target="#total-compra" hx-swap="innerHTML">
+    <input type="text" name="nome" value="{{ item.nome }}" class="input-inline">
+    <div class="input-preco">
+      <span>R$</span>
+      <input type="number" step="0.01" name="preco" value="{{ '%.2f'|format(item.preco) }}" class="input-inline">
+    </div>
+    <button type="button" class="btn-icon-danger" hx-post="/itens/{{ item.id }}/excluir" hx-target="#itens-lista" hx-swap="outerHTML">{{ icons.icon('trash', 16) }}</button>
+  </form>
+  {% endfor %}
+</div>

@@ -1,0 +1,3 @@
+{% include "_itens_lista.html" %}
+<strong id="total-compra" hx-swap-oob="true">R$ {{ '%.2f'|format(total)|replace('.', ',') }}</strong>
+<span id="contador-itens" hx-swap-oob="true">{{ itens|length }}</span>

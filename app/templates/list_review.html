@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% import "_icons.html" as icons %}
+{% set active_tab = "listas" %}
+{% block content %}
+<header class="screen-header">
+  <a href="/" class="back-link">{{ icons.icon('arrow-left', 22) }}</a>
+  <div>
+    <h1>Revisar lista</h1>
+    <p class="subtitle">Confira os itens identificados e edite se necessário</p>
+  </div>
+</header>
+
+<div class="card foto-card">
+  {% if fotos %}
+  <div class="foto-card__thumbs">
+    {% for foto in fotos %}
+    <img src="{{ foto_url(foto.path) }}" class="foto-thumb" alt="Foto enviada {{ loop.index }}">
+    {% endfor %}
+  </div>
+  {% endif %}
+  <div>
+    <strong>{{ 'Foto enviada' if fotos|length <= 1 else fotos|length ~ ' fotos enviadas' }}</strong>
+    <p class="muted">{{ lista.nome }}</p>
+    <p class="muted">{{ lista.criado_em.strftime('%d/%m/%Y · %H:%M') }}</p>
+  </div>
+</div>
+
+<div class="section-header">
+  <h2>Itens detectados (<span id="contador-itens">{{ itens|length }}</span>)</h2>
+  <button class="link-action" hx-post="/listas/{{ lista.id }}/itens" hx-target="#itens-lista" hx-swap="outerHTML"
+          hx-vals='{"nome": "Novo item", "preco": 0}'>+ Adicionar item</button>
+</div>
+
+{% include "_itens_lista.html" %}
+
+{% if total_diverge %}
+<div class="card" style="border-color: var(--danger)">
+  <strong style="color: var(--danger)">{{ icons.icon('alert-triangle', 16) }} Total não confere</strong>
+  <p class="muted">
+    A nota mostra R$ {{ '%.2f'|format(lista.total_nota_extraido)|replace('.', ',') }}, mas os itens
+    identificados somam um valor diferente. Confira se algum item ficou faltando ou duplicado.
+  </p>
+</div>
+{% endif %}
+
+<div class="card total-card" style="margin-top:4px">
+  <span>{{ icons.icon('shopping-cart', 16) }} Total da compra</span>
+  <strong id="total-compra">R$ {{ '%.2f'|format(total)|replace('.', ',') }}</strong>
+</div>
+
+<a href="/listas/{{ lista.id }}/rateio" class="btn btn-primary btn-block">{{ icons.icon('check', 16) }} Confirmar lista</a>
+<p class="hint-text">Você poderá definir os participantes do rateio na próxima etapa.</p>
+{% endblock %}

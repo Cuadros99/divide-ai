@@ -1,0 +1,86 @@
+{% import "_icons.html" as icons %}
+<div id="rateio-container">
+  <div class="card lista-resumo">
+    <div class="lista-resumo__topo">
+      <div class="lista-resumo__principal">
+        <div class="lista-resumo__icon">{{ icons.icon('shopping-cart', 22) }}</div>
+        <div>
+          <strong>{{ lista.nome }}</strong>
+          <span class="badge {{ 'badge-success' if lista.status == 'concluida' else 'badge-pending' }}">
+            {{ 'Concluída' if lista.status == 'concluida' else 'Em andamento' }}
+          </span>
+        </div>
+      </div>
+      <div class="lista-resumo__divider"></div>
+      <div class="lista-resumo__detalhes">
+        <div class="lista-resumo__linha">
+          <span class="lista-resumo__linha-icon">{{ icons.icon('clipboard', 14) }}</span>
+          <strong>{{ itens|length }} itens</strong>
+        </div>
+        <div class="lista-resumo__linha">
+          <span class="lista-resumo__linha-icon">{{ icons.icon('coin', 14) }}</span>
+          <span class="muted">Total da compra</span>
+        </div>
+        <strong class="lista-resumo__total-valor">R$ {{ '%.2f'|format(total_compra)|replace('.', ',') }}</strong>
+      </div>
+    </div>
+    {% if lista.status == 'concluida' %}
+    <div class="lista-resumo__pessoas">
+      <div class="lista-resumo__pessoas-header">{{ icons.icon('users', 14) }} <strong>Total por pessoa</strong></div>
+      {% for pessoa, valor in totais %}
+      {% if valor > 0 %}
+      <div class="totais-row">
+        <span class="dot" style="background: {{ cores[loop.index0 % cores|length] }}"></span>
+        <span class="totais-nome">{{ pessoa.nome }}</span>
+        <span class="totais-valor">R$ {{ '%.2f'|format(valor)|replace('.', ',') }}</span>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="section-header" style="margin-top:16px">
+    <h2>Itens da lista</h2>
+    {% if lista.status != 'concluida' %}
+    <label class="todos-toggle">
+      Todos
+      <input type="checkbox"
+             hx-post="/listas/{{ lista.id }}/participantes/alternar-todos"
+             hx-target="#rateio-container" hx-swap="outerHTML"
+             hx-sync="#rateio-container:replace"
+             {{ 'checked' if todos_marcados else '' }}>
+    </label>
+    {% endif %}
+  </div>
+
+  <div class="rateio-table" style="--n-pessoas: {{ pessoas|length }}">
+    <div class="rateio-table__header">
+      <span>Item</span>
+      <span>Preço</span>
+      {% for pessoa in pessoas %}<span>{{ pessoa.nome }}</span>{% endfor %}
+    </div>
+    {% for item in itens %}
+    <div class="rateio-table__row">
+      <span>{{ item.nome }}</span>
+      <span>R$ {{ '%.2f'|format(item.preco)|replace('.', ',') }}</span>
+      {% for pessoa in pessoas %}
+      <input type="checkbox"
+             hx-post="/itens/{{ item.id }}/participantes/{{ pessoa.id }}/toggle"
+             hx-target="#totais-panel" hx-swap="outerHTML"
+             hx-sync="#totais-panel:replace"
+             {{ 'checked' if (item.id, pessoa.id) in marcados else '' }}
+             {{ 'disabled' if lista.status == 'concluida' else '' }}>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+
+  {% if lista.status == 'concluida' %}
+  <form method="post" action="/listas/{{ lista.id }}/reabrir">
+    <button type="submit" class="btn btn-outline btn-block" style="margin-top:16px">{{ icons.icon('edit', 16) }} Editar divisão</button>
+  </form>
+  {% else %}
+  {% include "_totais.html" %}
+  {% endif %}
+</div>

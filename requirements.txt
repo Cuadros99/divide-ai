@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+jinja2
+python-multipart
+sqlmodel
+pydantic-settings
+itsdangerous
+slowapi
+openai
+python-dotenv
+sqlalchemy-libsql
+google-cloud-storage

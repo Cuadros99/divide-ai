@@ -1,0 +1,11 @@
+{% import "_icons.html" as icons %}
+<div id="totais-panel" class="card totais-card">
+  <div class="totais-header">{{ icons.icon('users', 16) }} <strong>Totais por pessoa</strong></div>
+  {% for pessoa, valor in totais %}
+  <div class="totais-row">
+    <span class="dot" style="background: {{ cores[loop.index0 % cores|length] }}"></span>
+    <span class="totais-nome">{{ pessoa.nome }}</span>
+    <span class="totais-valor">R$ {{ '%.2f'|format(valor)|replace('.', ',') }}</span>
+  </div>
+  {% endfor %}
+</div>

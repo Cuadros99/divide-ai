@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% import "_icons.html" as icons %}
+{% set active_tab = "listas" %}
+{% block content %}
+<div x-data="{ listaExcluir: null, pressTimer: null, abertoEm: 0 }" style="display:contents">
+  <header class="app-header">
+    <div>
+      <h1>{{ icons.icon('shopping-bag', 26) }} DivideAI</h1>
+      <p class="subtitle">Compras em grupo, sem complicação</p>
+    </div>
+    <a href="/pessoas" class="link-action">{{ icons.icon('users', 16) }} Pessoas</a>
+  </header>
+
+  <a href="/listas/nova" class="card card-cta">
+    <span class="icon-circle">＋</span>
+    <div>
+      <strong>Nova lista</strong>
+      <p>Tire uma foto da sua lista ou nota fiscal</p>
+    </div>
+  </a>
+
+  <div class="section-header">
+    <h2>Suas listas</h2>
+  </div>
+
+  <div class="listas-lista">
+    {% for l in listas %}
+    <div class="card lista-card lista-card--pressable"
+         @mousedown='pressTimer = setTimeout(() => { listaExcluir = { id: {{ l.lista.id }}, nome: {{ l.lista.nome|tojson }} }; abertoEm = Date.now() }, 550)'
+         @mouseup="clearTimeout(pressTimer)"
+         @mouseleave="clearTimeout(pressTimer)"
+         @touchstart='pressTimer = setTimeout(() => { listaExcluir = { id: {{ l.lista.id }}, nome: {{ l.lista.nome|tojson }} }; abertoEm = Date.now() }, 550)'
+         @touchend="clearTimeout(pressTimer); if (listaExcluir) $event.preventDefault()"
+         @touchmove="clearTimeout(pressTimer)"
+         @contextmenu.prevent
+         @click="if (!listaExcluir) window.location.href = '/listas/{{ l.lista.id }}/rateio'">
+      <div class="lista-card__icon">{{ icons.icon('shopping-cart', 22) }}</div>
+      <div class="lista-card__info">
+        <strong>{{ l.lista.nome }}</strong>
+        <p>{{ l.lista.criado_em.strftime('%d/%m/%Y') }} · {{ l.n_itens }} itens</p>
+        <span class="badge {{ 'badge-success' if l.lista.status == 'concluida' else 'badge-pending' }}">
+          {{ 'Concluída' if l.lista.status == 'concluida' else 'Em andamento' }}
+        </span>
+      </div>
+      <div class="lista-card__total">R$ {{ '%.2f'|format(l.total)|replace('.', ',') }}</div>
+    </div>
+    {% else %}
+    <p class="empty-state">Nenhuma lista ainda. Toque em "Nova lista" para começar.</p>
+    {% endfor %}
+  </div>
+
+  <div class="info-box">
+    <strong>{{ icons.icon('sparkles', 16) }} Dica</strong>
+    <p>Tire uma foto da nota e veja na hora quanto cada pessoa deve pagar!</p>
+  </div>
+
+  <div class="modal-overlay" x-show="listaExcluir" x-cloak @click.self="if (Date.now() - abertoEm > 300) listaExcluir = null">
+    <div class="modal-card">
+      <strong>{{ icons.icon('trash', 16) }} Remover lista</strong>
+      <p class="muted" x-text="listaExcluir ? 'Tem certeza que deseja remover \'' + listaExcluir.nome + '\'? Essa ação não pode ser desfeita.' : ''"></p>
+      <form method="post" :action="listaExcluir ? '/listas/' + listaExcluir.id + '/excluir' : '#'">
+        <button type="submit" class="btn btn-block btn-danger">Remover</button>
+      </form>
+      <button type="button" class="btn btn-outline btn-block" @click="listaExcluir = null">Cancelar</button>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% import "_icons.html" as icons %}
+{% set active_tab = "listas" %}
+{% block content %}
+<div x-data="{
+  fotos: [],
+  processando: false,
+  abortController: null,
+  fraseIndex: 0,
+  fraseInterval: null,
+  frases: [
+    'Analisando sua lista…',
+    'Processando sua lista…',
+    'Identificando os itens…',
+    'Lendo as informações da compra…',
+    'Organizando os itens…',
+    'Conferindo os detalhes da lista…',
+    'Preparando sua lista…',
+    'Quase pronto…',
+    'Finalizando os detalhes…',
+    'Só mais um instante…'
+  ],
+  addFiles(fileList) {
+    for (const file of fileList) {
+      this.fotos.push({ file, url: URL.createObjectURL(file) });
+    }
+  },
+  removeFoto(index) {
+    URL.revokeObjectURL(this.fotos[index].url);
+    this.fotos.splice(index, 1);
+  },
+  iniciarCicloFrases() {
+    this.pararCicloFrases();
+    this.fraseIndex = 0;
+    this.fraseInterval = setInterval(() => {
+      this.fraseIndex = (this.fraseIndex + 1) % this.frases.length;
+    }, 2000);
+  },
+  pararCicloFrases() {
+    if (this.fraseInterval) {
+      clearInterval(this.fraseInterval);
+      this.fraseInterval = null;
+    }
+  },
+  async enviar() {
+    if (this.fotos.length === 0 || this.processando) return;
+    this.processando = true;
+    this.iniciarCicloFrases();
+    this.abortController = new AbortController();
+    const formData = new FormData();
+    this.fotos.forEach(f => formData.append('fotos', f.file));
+    try {
+      const response = await fetch('/listas/processar', {
+        method: 'POST',
+        body: formData,
+        signal: this.abortController.signal
+      });
+      if (response.ok) {
+        window.location.href = response.url;
+        return;
+      }
+      throw new Error('Erro ao processar lista');
+    } catch (err) {
+      this.pararCicloFrases();
+      this.processando = false;
+      if (err.name !== 'AbortError') {
+        alert('Não foi possível processar a lista. Tente novamente.');
+      }
+    }
+  },
+  cancelar() {
+    if (this.abortController) this.abortController.abort();
+    this.pararCicloFrases();
+    this.processando = false;
+  }
+}" style="display:contents">
+  <header class="screen-header">
+    <a href="/" class="back-link">{{ icons.icon('arrow-left', 22) }}</a>
+    <div>
+      <h1>Nova lista</h1>
+      <p class="subtitle">Tire uma ou mais fotos da sua lista ou nota fiscal</p>
+    </div>
+  </header>
+
+  <div x-show="processando" x-cloak class="processing-screen">
+    <div class="processing-icon-wrap">
+      <div class="processing-icon-glow"></div>
+      <svg class="processing-icon" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M30,15 L70,15 L70,70 L66,78 L62,70 L58,78 L54,70 L50,78 L46,70 L42,78 L38,70 L34,78 L30,70 Z"
+              fill="white" stroke="var(--green)" stroke-width="2.5" stroke-linejoin="round" />
+        <line x1="37" y1="26" x2="63" y2="26" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" opacity="0.55" />
+        <line x1="37" y1="33" x2="59" y2="33" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" opacity="0.55" />
+        <line x1="37" y1="40" x2="63" y2="40" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" opacity="0.55" />
+        <line class="processing-icon__scan-line" x1="34" y1="52" x2="66" y2="52" stroke="var(--green)" stroke-width="3" stroke-linecap="round" />
+        <line class="processing-icon__spark" x1="74" y1="12" x2="79" y2="7" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" />
+        <line class="processing-icon__spark" x1="82" y1="18" x2="86" y2="14" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" />
+        <line class="processing-icon__spark" x1="78" y1="24" x2="82" y2="20" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" />
+      </svg>
+    </div>
+
+    <strong class="processing-heading">Processando sua lista</strong>
+    <p class="processing-subtitle">Estamos identificando os itens e os preços. Isso pode levar alguns segundos.</p>
+
+    <div class="processing-pill">
+      <span class="typing-dots"><span></span><span></span><span></span></span>
+      <span x-text="frases[fraseIndex]"></span>
+    </div>
+
+    <div class="info-box">
+      <strong>{{ icons.icon('sparkles', 16) }} Dica</strong>
+      <p>Quanto mais nítida a foto, mais precisa será a identificação dos itens.</p>
+    </div>
+
+    <button type="button" class="btn btn-outline btn-block" @click="cancelar()">Cancelar</button>
+  </div>
+
+  <form @submit.prevent="enviar()" x-show="!processando">
+    <div class="upload-box" @click="fotos.length === 0 && $refs.camera.click()" x-show="fotos.length === 0">
+      <div class="upload-placeholder">
+        <div class="icon-circle icon-circle-lg">{{ icons.icon('camera', 28) }}</div>
+        <strong>Tire uma foto</strong>
+        <p>Posicione a câmera sobre a lista ou nota fiscal</p>
+      </div>
+    </div>
+
+    <div class="fotos-preview" x-show="fotos.length > 0">
+      <template x-for="(foto, index) in fotos" :key="index">
+        <div class="foto-preview-item">
+          <img :src="foto.url" alt="Pré-visualização">
+          <button type="button" class="foto-preview-item__remove" @click.stop="removeFoto(index)">{{ icons.icon('x', 14) }}</button>
+        </div>
+      </template>
+    </div>
+
+    <button type="button" class="btn btn-primary btn-block" @click="$refs.camera.click()">{{ icons.icon('camera', 18) }} Tirar foto</button>
+
+    <div class="divider">ou</div>
+
+    <button type="button" class="btn btn-outline btn-block" @click="$refs.galeria.click()">{{ icons.icon('image', 18) }} Escolher da galeria</button>
+
+    <input type="file" x-ref="camera" accept="image/*" capture="environment" class="visually-hidden"
+           @change="if ($event.target.files.length) { addFiles($event.target.files) }; $event.target.value = ''">
+    <input type="file" x-ref="galeria" accept="image/*" multiple class="visually-hidden"
+           @change="if ($event.target.files.length) { addFiles($event.target.files) }; $event.target.value = ''">
+
+    <button type="submit" class="btn btn-primary btn-block" style="margin-top:20px" :disabled="fotos.length === 0">
+      {{ icons.icon('sparkles', 16) }} Processar lista
+    </button>
+    <p class="hint-text" x-text="fotos.length > 1 ? 'Vamos identificar os itens e preços das ' + fotos.length + ' fotos, sem duplicar itens' : 'Vamos identificar os itens e preços'"></p>
+  </form>
+</div>
+{% endblock %}

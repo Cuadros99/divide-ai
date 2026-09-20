@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% import "_icons.html" as icons %}
+{% set active_tab = "listas" %}
+{% block content %}
+<header class="screen-header">
+  <a href="/" class="back-link">{{ icons.icon('arrow-left', 22) }}</a>
+  <div>
+    <h1>Rateio da lista</h1>
+    <p class="subtitle">Marque quem participa de cada item</p>
+  </div>
+</header>
+
+{% include "_rateio.html" %}
+
+<div class="info-box" style="margin-top:4px">
+  <strong>{{ icons.icon('sparkles', 16) }} Tudo certo?</strong>
+  <p>Confira o valor de cada pessoa e conclua a lista quando terminar o rateio.</p>
+</div>
+
+{% if lista.status != 'concluida' %}
+<form method="post" action="/listas/{{ lista.id }}/concluir">
+  <button type="submit" class="btn btn-primary btn-block">
+    {{ icons.icon('check', 16) }} Concluir lista
+  </button>
+</form>
+<a href="/listas/{{ lista.id }}/revisar" class="btn btn-outline btn-block">{{ icons.icon('edit', 16) }} Editar itens da lista</a>
+{% endif %}
+
+<script>
+  (function () {
+    if (new URLSearchParams(window.location.search).get('concluida') !== '1') return;
+    history.replaceState(null, '', window.location.pathname);
+
+    var canvas = document.createElement('canvas');
+    canvas.style.position = 'fixed';
+    canvas.style.inset = '0';
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    canvas.style.pointerEvents = 'none';
+    canvas.style.zIndex = '9999';
+    document.body.appendChild(canvas);
+    var ctx = canvas.getContext('2d');
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    var cores = ['#16a34a', '#22c55e', '#facc15', '#f97316', '#3b82f6', '#ec4899'];
+    var pieces = [];
+    for (var i = 0; i < 140; i++) {
+      pieces.push({
+        x: Math.random() * canvas.width,
+        y: -20 - Math.random() * canvas.height * 0.5,
+        w: 6 + Math.random() * 6,
+        h: 8 + Math.random() * 8,
+        cor: cores[Math.floor(Math.random() * cores.length)],
+        vy: 2 + Math.random() * 3,
+        vx: -2 + Math.random() * 4,
+        rot: Math.random() * Math.PI,
+        vrot: -0.2 + Math.random() * 0.4
+      });
+    }
+
+    var start = null;
+    var duracao = 2600;
+
+    function tick(ts) {
+      if (!start) start = ts;
+      var elapsed = ts - start;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      pieces.forEach(function (p) {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.rot += p.vrot;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.fillStyle = p.cor;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      });
+
+      if (elapsed < duracao) {
+        requestAnimationFrame(tick);
+      } else {
+        canvas.remove();
+      }
+    }
+    requestAnimationFrame(tick);
+  })();
+</script>
+{% endblock %}

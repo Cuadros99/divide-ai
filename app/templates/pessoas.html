@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% import "_icons.html" as icons %}
+{% set active_tab = "config" %}
+{% block content %}
+<header class="screen-header">
+  <a href="/" class="back-link">{{ icons.icon('arrow-left', 22) }}</a>
+  <div>
+    <h1>Pessoas</h1>
+    <p class="subtitle">Gerencie as pessoas que participam das listas</p>
+  </div>
+</header>
+
+<div class="info-box">
+  <strong>{{ icons.icon('users', 16) }} Pessoas cadastradas ({{ pessoas|length }})</strong>
+  <p>Essas pessoas aparecerão nas listas para você definir o rateio dos itens.</p>
+</div>
+
+<button type="button" class="btn btn-primary btn-block" onclick="document.getElementById('form-nova-pessoa').classList.toggle('hidden')">
+  ＋ Adicionar pessoa
+</button>
+
+<form id="form-nova-pessoa" method="post" action="/pessoas" class="card hidden">
+  <label>Nome</label>
+  <input type="text" name="nome" required>
+  <label>E-mail</label>
+  <input type="email" name="email">
+  <button type="submit" class="btn btn-primary btn-block" style="margin-top:14px">Salvar</button>
+</form>
+
+<div class="pessoas-lista">
+  {% for pessoa in pessoas %}
+  <div class="card pessoa-card">
+    <div class="pessoa-card__row">
+      <div class="avatar" style="background: {{ cores[loop.index0 % cores|length] }}22; color: {{ cores[loop.index0 % cores|length] }}">
+        {{ pessoa.nome[0]|upper }}
+      </div>
+      <div class="pessoa-card__info">
+        <strong>{{ pessoa.nome }}</strong>
+        {% if pessoa.email %}<p class="muted">{{ pessoa.email }}</p>{% endif %}
+        {% if pessoa.is_dono %}<span class="badge badge-pending">Você</span>{% endif %}
+      </div>
+      <form method="post" action="/pessoas/{{ pessoa.id }}/excluir">
+        <button type="submit" class="btn-icon-danger">{{ icons.icon('trash', 16) }}</button>
+      </form>
+    </div>
+  </div>
+  {% else %}
+  <p class="empty-state">Nenhuma pessoa cadastrada ainda.</p>
+  {% endfor %}
+</div>
+{% endblock %}

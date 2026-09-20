@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% import "_icons.html" as icons %}
+{% block nav %}{% endblock %}
+{% block content %}
+<div class="login-screen">
+  <div class="login-logo">{{ icons.icon('shopping-bag', 32) }}</div>
+  <h1>DivideAI</h1>
+  <p class="subtitle">Divida suas compras de forma simples<br>e veja quanto cada um paga.</p>
+
+  <form method="post" action="/login" class="card">
+    <label>E-mail ou usuário</label>
+    <input type="text" name="username" placeholder="Digite seu e-mail ou usuário" required autofocus>
+
+    <label>Senha</label>
+    <input type="password" name="password" placeholder="Digite sua senha" required>
+
+    {% if erro %}<p class="erro">{{ erro }}</p>{% endif %}
+
+    <button type="submit" class="btn btn-primary btn-block" style="margin-top:16px">{{ icons.icon('lock', 16) }} Entrar</button>
+  </form>
+
+  <div class="info-box" style="margin-top:20px">
+    <strong>{{ icons.icon('shield', 16) }} Uso pessoal e seguro</strong>
+    <p>Seus dados ficam apenas com você. Este app é para uso pessoal.</p>
+  </div>
+</div>
+{% endblock %}
