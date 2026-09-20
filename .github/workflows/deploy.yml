@@ -1,0 +1,39 @@
+# Deploys to Cloud Run on any pushed tag matching v*.
+# GCP IAM/WIF setup and the Secret Manager secrets referenced below are
+# managed outside this repo — editing this file alone can't change them.
+name: Deploy to Cloud Run
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy listadivide \
+            --project=listadivide-2026 \
+            --source . \
+            --region us-central1 \
+            --allow-unauthenticated \
+            --set-env-vars="DATABASE_URL=sqlite+libsql://listadivide-dany-cuadros.aws-us-east-1.turso.io,STORAGE_BACKEND=gcs,GCS_BUCKET_NAME=listadivide-2026-uploads" \
+            --set-secrets="APP_USER=app-user:latest,APP_PASSWORD=app-password:latest,SECRET_KEY=secret-key:latest,LLM_PROVIDER=llm-provider:latest,OPENAI_API_KEY=openai-api-key:latest,OPENAI_MODEL=openai-model:latest,TURSO_AUTH_TOKEN=turso-auth-token:latest"
