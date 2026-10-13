@@ -1,3 +1,5 @@
+import os
+
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -9,6 +11,7 @@ from app.models import ItemParticipante, ListaPessoa, Pessoa
 
 router = APIRouter(prefix="/pessoas", tags=["pessoas"])
 templates = Jinja2Templates(directory="app/templates")
+templates.env.globals["asset_v"] = int(os.path.getmtime("app/static/style.css"))
 
 
 @router.get("")

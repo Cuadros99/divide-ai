@@ -1,3 +1,4 @@
+import os
 import secrets
 
 from fastapi import APIRouter, Form, Request
@@ -13,6 +14,7 @@ limiter = Limiter(key_func=get_remote_address)
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
+templates.env.globals["asset_v"] = int(os.path.getmtime("app/static/style.css"))
 
 
 class AuthMiddleware(BaseHTTPMiddleware):

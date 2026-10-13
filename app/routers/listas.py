@@ -1,3 +1,4 @@
+import os
 import re
 from datetime import datetime
 
@@ -15,6 +16,7 @@ from app.storage import get_storage
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 templates.env.globals["foto_url"] = lambda key: get_storage().url_for(key)
+templates.env.globals["asset_v"] = int(os.path.getmtime("app/static/style.css"))
 
 _DATA_BR_RE = re.compile(r"^\d{2}/\d{2}/\d{4}$")
 
