@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from sqlmodel import Field, SQLModel
@@ -14,7 +14,7 @@ class Pessoa(SQLModel, table=True):
 class Lista(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     nome: str
-    criado_em: datetime = Field(default_factory=datetime.utcnow)
+    criado_em: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     status: str = "rascunho"  # rascunho | concluida
     total_nota_extraido: Optional[float] = None  # total impresso na nota, lido pelo LLM (para conferência)
 
