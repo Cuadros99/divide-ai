@@ -9,7 +9,7 @@ from sqlmodel import Session, delete, insert, select
 from app.constants import CORES
 from app.db import get_session
 from app.llm.factory import get_parser
-from app.models import Foto, Item, ItemParticipante, Lista, Pessoa
+from app.models import Foto, Item, ItemParticipante, Lista, ListaPessoa, Pessoa
 from app.storage import get_storage
 
 router = APIRouter()
@@ -47,7 +47,14 @@ def _totais_por_pessoa(session: Session, itens: list[Item], pessoas: list[Pessoa
 def _rateio_context(lista_id: int, session: Session) -> dict:
     lista = session.get(Lista, lista_id)
     itens = session.exec(select(Item).where(Item.lista_id == lista_id)).all()
-    pessoas = session.exec(select(Pessoa)).all()
+    pessoas = session.exec(
+        select(Pessoa)
+        .join(ListaPessoa, ListaPessoa.pessoa_id == Pessoa.id)
+        .where(ListaPessoa.lista_id == lista_id)
+        .order_by(Pessoa.id)
+    ).all()
+    todas_pessoas = session.exec(select(Pessoa).order_by(Pessoa.id)).all()
+    membros_ids = {p.id for p in pessoas}
     item_ids = [i.id for i in itens]
 
     participantes = (
@@ -66,6 +73,8 @@ def _rateio_context(lista_id: int, session: Session) -> dict:
         "lista": lista,
         "itens": itens,
         "pessoas": pessoas,
+        "todas_pessoas": todas_pessoas,
+        "membros_ids": membros_ids,
         "marcados": marcados,
         "todos_marcados": todos_marcados,
         "totais": totais,
@@ -130,6 +139,22 @@ async def processar_lista(fotos: list[UploadFile] = File(...), session: Session 
     session.add(lista)
     session.commit()
     session.refresh(lista)
+
+    lista_anterior = session.exec(
+        select(Lista).where(Lista.id != lista.id).order_by(Lista.criado_em.desc())
+    ).first()
+    pessoa_ids = set()
+    if lista_anterior:
+        pessoa_ids = set(
+            session.exec(
+                select(ListaPessoa.pessoa_id).where(ListaPessoa.lista_id == lista_anterior.id)
+            ).all()
+        )
+    if not pessoa_ids:
+        pessoa_ids = set(session.exec(select(Pessoa.id)).all())
+    for pessoa_id in pessoa_ids:
+        session.add(ListaPessoa(lista_id=lista.id, pessoa_id=pessoa_id))
+    session.commit()
 
     for i, conteudo in enumerate(conteudos):
         key = f"uploads/{lista.id}_{i}.jpg"
@@ -245,7 +270,12 @@ def toggle_participante(item_id: int, pessoa_id: int, request: Request, session:
 @router.post("/listas/{lista_id}/participantes/alternar-todos")
 def alternar_todos(lista_id: int, request: Request, session: Session = Depends(get_session)):
     itens = session.exec(select(Item).where(Item.lista_id == lista_id)).all()
-    pessoas = session.exec(select(Pessoa)).all()
+    pessoas = session.exec(
+        select(Pessoa)
+        .join(ListaPessoa, ListaPessoa.pessoa_id == Pessoa.id)
+        .where(ListaPessoa.lista_id == lista_id)
+        .order_by(Pessoa.id)
+    ).all()
     item_ids = [i.id for i in itens]
 
     existentes = (
@@ -262,6 +292,36 @@ def alternar_todos(lista_id: int, request: Request, session: Session = Depends(g
         rows = [{"item_id": item.id, "pessoa_id": pessoa.id} for item in itens for pessoa in pessoas]
         session.exec(insert(ItemParticipante).values(rows))
 
+    session.commit()
+
+    ctx = _rateio_context(lista_id, session)
+    return templates.TemplateResponse(request, "_rateio.html", ctx)
+
+
+@router.post("/listas/{lista_id}/participantes/{pessoa_id}/toggle")
+def toggle_participante_lista(
+    lista_id: int, pessoa_id: int, request: Request, session: Session = Depends(get_session)
+):
+    lista = session.get(Lista, lista_id)
+    if not lista:
+        raise HTTPException(status_code=404)
+    if lista.status == "concluida":
+        raise HTTPException(status_code=400)
+
+    existente = session.get(ListaPessoa, (lista_id, pessoa_id))
+    if existente:
+        session.delete(existente)
+        itens = session.exec(select(Item).where(Item.lista_id == lista_id)).all()
+        item_ids = [i.id for i in itens]
+        if item_ids:
+            session.exec(
+                delete(ItemParticipante).where(
+                    ItemParticipante.item_id.in_(item_ids),
+                    ItemParticipante.pessoa_id == pessoa_id,
+                )
+            )
+    else:
+        session.add(ListaPessoa(lista_id=lista_id, pessoa_id=pessoa_id))
     session.commit()
 
     ctx = _rateio_context(lista_id, session)

@@ -35,3 +35,8 @@ class Item(SQLModel, table=True):
 class ItemParticipante(SQLModel, table=True):
     item_id: int = Field(foreign_key="item.id", primary_key=True)
     pessoa_id: int = Field(foreign_key="pessoa.id", primary_key=True)
+
+
+class ListaPessoa(SQLModel, table=True):
+    lista_id: int = Field(foreign_key="lista.id", primary_key=True)
+    pessoa_id: int = Field(foreign_key="pessoa.id", primary_key=True)

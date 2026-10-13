@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from sqlmodel import Session, SQLModel, create_engine
+from sqlmodel import Session, SQLModel, create_engine, select
 
 from app.config import settings
 
@@ -36,6 +36,38 @@ def init_db() -> None:
     from app import models  # noqa: F401 (garante que os modelos sejam registrados)
 
     SQLModel.metadata.create_all(engine)
+    _backfill_lista_pessoa()
+
+
+def _backfill_lista_pessoa() -> None:
+    from app.models import Item, ItemParticipante, Lista, ListaPessoa, Pessoa
+
+    with Session(engine) as session:
+        listas = session.exec(select(Lista)).all()
+        for lista in listas:
+            ja_tem = session.exec(
+                select(ListaPessoa).where(ListaPessoa.lista_id == lista.id)
+            ).first()
+            if ja_tem:
+                continue
+
+            item_ids = session.exec(select(Item.id).where(Item.lista_id == lista.id)).all()
+            pessoa_ids = set()
+            if item_ids:
+                participantes = session.exec(
+                    select(ItemParticipante.pessoa_id).where(
+                        ItemParticipante.item_id.in_(item_ids)
+                    )
+                ).all()
+                pessoa_ids = set(participantes)
+
+            if not pessoa_ids:
+                pessoa_ids = set(session.exec(select(Pessoa.id)).all())
+
+            for pessoa_id in pessoa_ids:
+                session.add(ListaPessoa(lista_id=lista.id, pessoa_id=pessoa_id))
+
+        session.commit()
 
 
 def get_session():

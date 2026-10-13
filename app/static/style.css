@@ -640,6 +640,67 @@ input[type="number"] {
   font-weight: 600;
 }
 
+.participantes-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.participantes-card__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.participantes-card__header strong {
+  flex: 1;
+}
+
+.participantes-card__link {
+  color: var(--green-dark);
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.participantes-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.chip--ativo {
+  background: var(--green);
+  border-color: var(--green);
+  color: white;
+}
+
+.chip--ativo:hover {
+  background: var(--green-dark);
+}
+
+.chip__checkbox {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .rateio-table {
   overflow-x: auto;
   overflow-y: auto;

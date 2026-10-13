@@ -40,6 +40,30 @@
     {% endif %}
   </div>
 
+  <div class="card participantes-card" style="margin-top:16px">
+    <div class="participantes-card__header">
+      {{ icons.icon('users', 16) }}
+      <strong>Participantes desta lista</strong>
+      <a href="/pessoas" class="participantes-card__link">Gerenciar</a>
+    </div>
+    <div class="participantes-chips">
+      {% for pessoa in todas_pessoas %}
+      <label class="chip {{ 'chip--ativo' if pessoa.id in membros_ids else '' }}">
+        <input type="checkbox"
+               class="chip__checkbox"
+               hx-post="/listas/{{ lista.id }}/participantes/{{ pessoa.id }}/toggle"
+               hx-target="#rateio-container" hx-swap="outerHTML"
+               hx-sync="#rateio-container:replace"
+               {{ 'checked' if pessoa.id in membros_ids else '' }}
+               {{ 'disabled' if lista.status == 'concluida' else '' }}>
+        {{ pessoa.nome }}
+      </label>
+      {% else %}
+      <span class="empty-state">Nenhuma pessoa cadastrada ainda. <a href="/pessoas" class="participantes-card__link">Cadastrar pessoa</a></span>
+      {% endfor %}
+    </div>
+  </div>
+
   <div class="section-header" style="margin-top:16px">
     <h2>Itens da lista</h2>
     {% if lista.status != 'concluida' %}
