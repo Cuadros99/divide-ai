@@ -17,12 +17,9 @@
   <p>Confira o valor de cada pessoa e conclua a lista quando terminar o rateio.</p>
 </div>
 
+{# "Concluir lista" mudou para _totais.html (dentro de #totais-panel): lá os três swaps
+   HTMX o re-renderizam, então o botão não fica desabilitado por estado velho. #}
 {% if lista.status != 'concluida' %}
-<form method="post" action="/listas/{{ lista.id }}/concluir">
-  <button type="submit" class="btn btn-primary btn-block">
-    {{ icons.icon('check', 16) }} Concluir lista
-  </button>
-</form>
 <a href="/listas/{{ lista.id }}/revisar" class="btn btn-outline btn-block">{{ icons.icon('edit', 16) }} Editar itens da lista</a>
 {% endif %}
 

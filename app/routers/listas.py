@@ -46,6 +46,17 @@ def _totais_por_pessoa(session: Session, itens: list[Item], pessoas: list[Pessoa
     return [(pessoa, totais[pessoa.id]) for pessoa in pessoas]
 
 
+def _tem_rateio(totais: list[tuple[Pessoa, float]]) -> bool:
+    """Existe alguém com valor > 0, ou seja: há de fato algo para dividir?
+
+    É o critério único de "a lista pode ser concluída", usado pelo guard do servidor em
+    `concluir_lista` e pelo `pode_concluir` que desabilita o botão na tela. Deliberadamente
+    "valor > 0" e não "existe ItemParticipante": uma lista marcada só em itens de preço 0
+    tem marcações e ainda assim não tem nada a dividir.
+    """
+    return any(valor > 0 for _, valor in totais)
+
+
 def _rateio_context(lista_id: int, session: Session) -> dict:
     lista = session.get(Lista, lista_id)
     itens = session.exec(select(Item).where(Item.lista_id == lista_id)).all()
@@ -73,6 +84,8 @@ def _rateio_context(lista_id: int, session: Session) -> dict:
 
     return {
         "lista": lista,
+        "lista_id": lista_id,
+        "pode_concluir": _tem_rateio(totais),
         "itens": itens,
         "pessoas": pessoas,
         "todas_pessoas": todas_pessoas,
@@ -250,8 +263,17 @@ def excluir_item(item_id: int, request: Request, session: Session = Depends(get_
 
 
 @router.get("/listas/{lista_id}/rateio")
-def rateio_lista(lista_id: int, request: Request, session: Session = Depends(get_session)):
+def rateio_lista(
+    lista_id: int,
+    request: Request,
+    erro: str | None = None,
+    session: Session = Depends(get_session),
+):
+    # `erro` é o sinal da recusa do POST /concluir (redirect 303 com ?erro=sem_rateio).
+    # Chega por query param, e não por 400 cru, porque o form é um POST normal (sem HTMX):
+    # o usuário continua na tela de rateio, que é onde ele resolve o problema.
     ctx = _rateio_context(lista_id, session)
+    ctx["erro"] = erro
     return templates.TemplateResponse(request, "split.html", ctx)
 
 
@@ -333,6 +355,16 @@ def toggle_participante_lista(
 @router.post("/listas/{lista_id}/concluir")
 def concluir_lista(lista_id: int, session: Session = Depends(get_session)):
     lista = session.get(Lista, lista_id)
+    if not lista:
+        raise HTTPException(status_code=404)
+
+    # Guard de servidor (a autoridade): o botão desabilitado é só conveniência, aqui a
+    # recusa vale até para POST feito na mão. Recusa = redirect 303 de volta à tela de
+    # rateio com o motivo, em vez de 400 cru: o form é um POST normal, sem HTMX.
+    ctx = _rateio_context(lista_id, session)
+    if not ctx["pode_concluir"]:
+        return RedirectResponse(f"/listas/{lista_id}/rateio?erro=sem_rateio", status_code=303)
+
     lista.status = "concluida"
     session.add(lista)
     session.commit()
@@ -342,6 +374,8 @@ def concluir_lista(lista_id: int, session: Session = Depends(get_session)):
 @router.post("/listas/{lista_id}/reabrir")
 def reabrir_lista(lista_id: int, session: Session = Depends(get_session)):
     lista = session.get(Lista, lista_id)
+    if not lista:
+        raise HTTPException(status_code=404)
     lista.status = "rascunho"
     session.add(lista)
     session.commit()

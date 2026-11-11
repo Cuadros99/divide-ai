@@ -1,11 +1,41 @@
 {% import "_icons.html" as icons %}
-<div id="totais-panel" class="card totais-card">
-  <div class="totais-header">{{ icons.icon('users', 16) }} <strong>Totais por pessoa</strong></div>
-  {% for pessoa, valor in totais %}
-  <div class="totais-row">
-    <span class="dot" style="background: {{ cores[loop.index0 % cores|length] }}"></span>
-    <span class="totais-nome">{{ pessoa.nome }}</span>
-    <span class="totais-valor">R$ {{ '%.2f'|format(valor)|replace('.', ',') }}</span>
+{#
+  Totais por pessoa + o botão de concluir a lista.
+
+  O botão vive AQUI, e não em split.html, por causa do HTMX: `#totais-panel` é o alvo do
+  toggle de item e este partial também é incluído por `_rateio.html` (alvo do toggle de
+  participante e do alternar-todos). Logo os três swaps re-renderizam o botão, e ele nunca
+  fica com estado velho — marcar o primeiro item reabilita o botão sem recarregar a página.
+  Deixá-lo fora do container exigiria um `hx-swap-oob` em cada uma das três rotas.
+#}
+<div id="totais-panel">
+  <div class="card totais-card">
+    <div class="totais-header">{{ icons.icon('users', 16) }} <strong>Totais por pessoa</strong></div>
+    {% for pessoa, valor in totais %}
+    <div class="totais-row">
+      <span class="dot" style="background: {{ cores[loop.index0 % cores|length] }}"></span>
+      <span class="totais-nome">{{ pessoa.nome }}</span>
+      <span class="totais-valor">R$ {{ '%.2f'|format(valor)|replace('.', ',') }}</span>
+    </div>
+    {% endfor %}
   </div>
-  {% endfor %}
+
+  {# Sinal da recusa do servidor (redirect 303 com ?erro=sem_rateio). Fica dentro do
+     container trocado, então desaparece no primeiro toggle. `erro` é Undefined nos
+     renders de partial, o que é falso em Jinja. #}
+  {% if erro == 'sem_rateio' %}
+  <div class="info-box info-box--alerta">
+    <strong>{{ icons.icon('alert-triangle', 16) }} Nada para dividir</strong>
+    <p>Marque quem participa de pelo menos um item antes de concluir a lista.</p>
+  </div>
+  {% endif %}
+
+  <form method="post" action="/listas/{{ lista_id }}/concluir" style="margin-top:16px">
+    <button type="submit" class="btn btn-primary btn-block" {{ 'disabled' if not pode_concluir else '' }}>
+      {{ icons.icon('check', 16) }} Concluir lista
+    </button>
+  </form>
+  {% if not pode_concluir %}
+  <p class="hint-text">Marque quem participa de pelo menos um item para concluir</p>
+  {% endif %}
 </div>

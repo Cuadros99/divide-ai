@@ -1001,3 +1001,12 @@ input[type="number"] {
 .processing-screen .btn-outline {
   width: 100%;
 }
+
+.info-box--alerta {
+  background: #fef3c7;
+  margin-top: 16px;
+}
+
+.info-box--alerta strong {
+  color: #92400e;
+}
