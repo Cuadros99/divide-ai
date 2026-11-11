@@ -38,6 +38,14 @@
         <strong>{{ pessoa.nome }}</strong>
         {% if pessoa.email %}<p class="muted">{{ pessoa.email }}</p>{% endif %}
         {% if pessoa.is_dono %}<span class="badge badge-pending">Você</span>{% endif %}
+        {% if tricount_enabled %}
+          {% set vinculo = vinculos.get(pessoa.id) %}
+          {% if vinculo %}
+          <span class="badge badge-success">Tricount: {{ vinculo.membro_nome }}</span>
+          {% else %}
+          <span class="badge badge-pending">Sem vínculo</span>
+          {% endif %}
+        {% endif %}
       </div>
       <form method="post" action="/pessoas/{{ pessoa.id }}/excluir">
         <button type="submit" class="btn-icon-danger">{{ icons.icon('trash', 16) }}</button>
@@ -48,4 +56,14 @@
   <p class="empty-state">Nenhuma pessoa cadastrada ainda.</p>
   {% endfor %}
 </div>
+
+{% if tricount_enabled %}
+<div class="info-box">
+  <strong>{{ icons.icon('coin', 16) }} Tricount</strong>
+  <p>Vincule cada pessoa a um membro do tricount para que a despesa seja lançada na pessoa certa.</p>
+</div>
+{# Uma única chamada à API por page load (não uma por pessoa): o bloco inteiro
+   é carregado de uma vez e se re-renderiza a cada mudança de vínculo. #}
+<div id="tricount-vinculos" hx-get="/pessoas/tricount/vinculos" hx-trigger="load" hx-swap="outerHTML"></div>
+{% endif %}
 {% endblock %}

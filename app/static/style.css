@@ -638,6 +638,7 @@ input[type="number"] {
   font-size: 13px;
   color: var(--green-dark);
   font-weight: 600;
+  transition: opacity 0.15s ease;
 }
 
 .participantes-card {
@@ -682,7 +683,8 @@ input[type="number"] {
   font-weight: 600;
   cursor: pointer;
   user-select: none;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease,
+    opacity 0.15s ease;
 }
 
 .chip--ativo {
@@ -737,6 +739,7 @@ input[type="number"] {
 
 .rateio-table__row {
   border-bottom: 1px solid var(--border);
+  transition: opacity 0.15s ease;
 }
 
 .rateio-table__row:last-child {
@@ -749,6 +752,23 @@ input[type="number"] {
   height: 18px;
   accent-color: var(--green);
   justify-self: center;
+}
+
+/* Feedback de request do htmx: a classe .htmx-request vai no alvo do hx-indicator.
+   Sempre apontamos para um elemento diferente do hx-disabled-elt: no htmx 1.9.12 os dois
+   compartilham o mesmo contador interno e a classe ficaria presa se fosse o mesmo elemento. */
+.todos-toggle.htmx-request,
+.chip.htmx-request {
+  opacity: 0.5;
+  cursor: progress;
+  pointer-events: none;
+}
+
+/* na linha do item não bloqueamos o ponteiro: o hx-disabled-elt já trava o checkbox
+   clicado e os outros da mesma linha continuam marcáveis */
+.rateio-table__row.htmx-request {
+  opacity: 0.5;
+  cursor: progress;
 }
 
 .totais-card {
@@ -1002,6 +1022,7 @@ input[type="number"] {
   width: 100%;
 }
 
+/* Tricount */
 .info-box--alerta {
   background: #fef3c7;
   margin-top: 16px;
@@ -1009,4 +1030,56 @@ input[type="number"] {
 
 .info-box--alerta strong {
   color: #92400e;
+}
+
+.info-box--alerta .btn {
+  margin-top: 12px;
+}
+
+.tricount-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.tricount-status__ok {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--green-dark);
+  font-weight: 600;
+}
+
+.tricount-status__valor {
+  margin-left: auto;
+  color: var(--ink);
+}
+
+.tricount-status__aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: #92400e;
+}
+
+/* O bloco `input[type="text"], ...` acima não inclui `select`, e eu não mexo nele para não
+   conflitar com as mudanças ainda não commitadas do working tree. Esta regra repete os mesmos
+   tokens (border/radius/padding/font/background) para o dropdown de vínculo pessoa↔membro
+   ficar com a aparência dos inputs do app em vez da default do browser. */
+select {
+  padding: 13px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  font-size: 15px;
+  background: var(--bg);
+  color: var(--ink);
+  /* auto + max-width porque o select divide a linha (.totais-row) com o nome da pessoa;
+     100% o jogaria para baixo do nome. */
+  width: auto;
+  max-width: 55%;
 }

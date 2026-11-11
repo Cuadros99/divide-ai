@@ -1,0 +1,49 @@
+{% import "_icons.html" as icons %}
+{# Raiz com o id: o swap é outerHTML, então o partial tem de se re-identificar. #}
+<div id="tricount-vinculos" class="card participantes-card">
+  <div class="participantes-card__header">
+    {{ icons.icon('coin', 16) }}
+    <strong>Vínculo com o Tricount</strong>
+  </div>
+
+  {% if erro %}
+  <div class="totais-row erro">
+    {{ icons.icon('alert-triangle', 16) }}
+    <span class="totais-nome">{{ erro }}</span>
+  </div>
+  <button type="button" class="btn btn-outline btn-block"
+          hx-get="/pessoas/tricount/vinculos"
+          hx-target="#tricount-vinculos"
+          hx-swap="outerHTML">Tentar de novo</button>
+
+  {% elif not pessoas %}
+  <p class="empty-state">Cadastre uma pessoa para vinculá-la a um membro do Tricount.</p>
+
+  {% else %}
+  {% set uuids_ativos = membros | map(attribute='uuid') | list %}
+  {% for p in pessoas %}
+  {% set vinculo = vinculos.get(p.id) %}
+  <div class="totais-row">
+    <span class="totais-nome">{{ p.nome }}</span>
+    <select name="membro_uuid"
+            aria-label="Membro do Tricount de {{ p.nome }}"
+            hx-post="/pessoas/{{ p.id }}/tricount"
+            hx-trigger="change"
+            hx-target="#tricount-vinculos"
+            hx-swap="outerHTML">
+      <option value=""{% if not vinculo %} selected{% endif %}>— sem vínculo —</option>
+      {% for m in membros %}
+      <option value="{{ m.uuid }}"{% if vinculo and vinculo.membro_uuid == m.uuid %} selected{% endif %}>{{ m.nome }}</option>
+      {% endfor %}
+      {% if vinculo and vinculo.membro_uuid not in uuids_ativos %}
+      {# Vínculo apontando para membro que saiu do grupo: mostra a verdade em vez de parecer "sem vínculo". #}
+      <option value="{{ vinculo.membro_uuid }}" selected>{{ vinculo.membro_nome }} (fora do grupo)</option>
+      {% endif %}
+    </select>
+  </div>
+  {% endfor %}
+  {% if not membros %}
+  <p class="hint-text">Nenhum membro ativo no tricount configurado.</p>
+  {% endif %}
+  {% endif %}
+</div>

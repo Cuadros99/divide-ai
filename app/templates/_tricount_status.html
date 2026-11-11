@@ -1,0 +1,37 @@
+{% import "_icons.html" as icons %}
+{#
+  Status do lançamento no Tricount, dentro da tela de rateio de uma lista concluída.
+  Nada é renderizado quando a integração está desligada (kill switch) ou quando a lista
+  foi concluída antes da feature existir (envio_tricount nulo).
+  As decisões que precisam de relógio ou de comparação de hash vêm prontas do router
+  (envio_tricount_em_voo / envio_tricount_pendente / envio_tricount_divergente) — aqui só
+  há apresentação.
+#}
+{% if tricount_enabled and envio_tricount %}
+{% if envio_tricount.status == 'ok' %}
+<div class="tricount-status">
+  <span class="tricount-status__ok">{{ icons.icon('check', 14) }} Lançado no Tricount</span>
+  {% if envio_tricount.amount_centavos is not none %}
+  <strong class="tricount-status__valor">R$ {{ '%.2f'|format(envio_tricount.amount_centavos / 100)|replace('.', ',') }}</strong>
+  {% endif %}
+</div>
+{% if envio_tricount_divergente %}
+<p class="tricount-status__aviso">{{ icons.icon('alert-triangle', 14) }} A divisão mudou depois do lançamento.</p>
+{% endif %}
+{% elif envio_tricount_em_voo %}
+{# `enviando` dentro do grace period: ou a chamada está em voo agora, ou o processo morreu
+   e o reenvio só é liberado depois do grace. Linha discreta e sem botão de propósito —
+   oferecer "Reenviar" aqui poderia duplicar a despesa; a decisão vem de `envio_em_voo`. #}
+<div class="tricount-status">
+  <span>Enviando ao Tricount…</span>
+</div>
+{% elif envio_tricount_pendente %}
+<div class="info-box info-box--alerta">
+  <strong>{{ icons.icon('alert-triangle', 16) }} Não foi lançado no Tricount</strong>
+  <p>{{ envio_tricount.erro or 'O envio começou e não terminou.' }}</p>
+  <form method="post" action="/listas/{{ lista.id }}/tricount/reenviar">
+    <button type="submit" class="btn btn-outline btn-block">Reenviar ao Tricount</button>
+  </form>
+</div>
+{% endif %}
+{% endif %}

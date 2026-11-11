@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from starlette.middleware.gzip import GZipMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.auth import AuthMiddleware, limiter
@@ -22,6 +23,10 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # para que request.session já esteja disponível quando o Auth checar login.
 app.add_middleware(AuthMiddleware)
 app.add_middleware(SessionMiddleware, secret_key=settings.secret_key)
+# add_middleware empilha ao contrário (o último adicionado roda primeiro), então o GZip
+# fica por fora de todos e comprime qualquer resposta — inclusive os redirects do Auth
+# e os ~38 KB de HTML do rateio. minimum_size evita gastar CPU com respostas pequenas.
+app.add_middleware(GZipMiddleware, minimum_size=500)
 
 Path("app/static/uploads").mkdir(parents=True, exist_ok=True)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")

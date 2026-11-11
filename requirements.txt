@@ -10,3 +10,4 @@ openai
 python-dotenv
 sqlalchemy-libsql
 google-cloud-storage
+tricount-api==0.1.2

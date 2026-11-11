@@ -1,6 +1,8 @@
 # Deploys to Cloud Run on any pushed tag matching v*.
 # GCP IAM/WIF setup and the Secret Manager secrets referenced below are
 # managed outside this repo — editing this file alone can't change them.
+# Isso inclui os secrets do Tricount (`tricount-token` e
+# `tricount-credentials-json`), que precisam existir antes deste deploy.
 name: Deploy to Cloud Run
 
 on:
@@ -35,5 +37,5 @@ jobs:
             --source . \
             --region us-central1 \
             --allow-unauthenticated \
-            --set-env-vars="DATABASE_URL=sqlite+libsql://listadivide-dany-cuadros.aws-us-east-1.turso.io,STORAGE_BACKEND=gcs,GCS_BUCKET_NAME=listadivide-2026-uploads" \
-            --set-secrets="APP_USER=app-user:latest,APP_PASSWORD=app-password:latest,SECRET_KEY=secret-key:latest,LLM_PROVIDER=llm-provider:latest,OPENAI_API_KEY=openai-api-key:latest,OPENAI_MODEL=openai-model:latest,TURSO_AUTH_TOKEN=turso-auth-token:latest"
+            --set-env-vars="DATABASE_URL=sqlite+libsql://listadivide-dany-cuadros.aws-us-east-1.turso.io,STORAGE_BACKEND=gcs,GCS_BUCKET_NAME=listadivide-2026-uploads,TRICOUNT_ENABLED=true,TRICOUNT_PROVIDER=real" \
+            --set-secrets="APP_USER=app-user:latest,APP_PASSWORD=app-password:latest,SECRET_KEY=secret-key:latest,LLM_PROVIDER=llm-provider:latest,OPENAI_API_KEY=openai-api-key:latest,OPENAI_MODEL=openai-model:latest,TURSO_AUTH_TOKEN=turso-auth-token:latest,TRICOUNT_TOKEN=tricount-token:latest,TRICOUNT_CREDENTIALS_JSON=tricount-credentials-json:latest"

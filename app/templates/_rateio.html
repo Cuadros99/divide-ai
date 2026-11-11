@@ -54,6 +54,8 @@
                hx-post="/listas/{{ lista.id }}/participantes/{{ pessoa.id }}/toggle"
                hx-target="#rateio-container" hx-swap="outerHTML"
                hx-sync="#rateio-container:replace"
+               hx-indicator="closest .chip"
+               hx-disabled-elt="this"
                {{ 'checked' if pessoa.id in membros_ids else '' }}
                {{ 'disabled' if lista.status == 'concluida' else '' }}>
         {{ pessoa.nome }}
@@ -73,6 +75,8 @@
              hx-post="/listas/{{ lista.id }}/participantes/alternar-todos"
              hx-target="#rateio-container" hx-swap="outerHTML"
              hx-sync="#rateio-container:replace"
+             hx-indicator="closest .todos-toggle"
+             hx-disabled-elt="this"
              {{ 'checked' if todos_marcados else '' }}>
     </label>
     {% endif %}
@@ -93,6 +97,8 @@
              hx-post="/itens/{{ item.id }}/participantes/{{ pessoa.id }}/toggle"
              hx-target="#totais-panel" hx-swap="outerHTML"
              hx-sync="#totais-panel:replace"
+             hx-indicator="closest .rateio-table__row"
+             hx-disabled-elt="this"
              {{ 'checked' if (item.id, pessoa.id) in marcados else '' }}
              {{ 'disabled' if lista.status == 'concluida' else '' }}>
       {% endfor %}
@@ -101,6 +107,7 @@
   </div>
 
   {% if lista.status == 'concluida' %}
+  {% include "_tricount_status.html" %}
   <form method="post" action="/listas/{{ lista.id }}/reabrir">
     <button type="submit" class="btn btn-outline btn-block" style="margin-top:16px">{{ icons.icon('edit', 16) }} Editar divisão</button>
   </form>
